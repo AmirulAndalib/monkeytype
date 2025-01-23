@@ -1,13 +1,14 @@
+import { LeaderboardEntry } from "@monkeytype/contracts/schemas/leaderboards";
 import { MonkeyQueue } from "./monkey-queue";
 
 const QUEUE_NAME = "george-tasks";
 
-interface GeorgeTask {
+type GeorgeTask = {
   name: string;
-  args: any[];
-}
+  args: unknown[];
+};
 
-function buildGeorgeTask(taskName: string, taskArgs: any[]): GeorgeTask {
+function buildGeorgeTask(taskName: string, taskArgs: unknown[]): GeorgeTask {
   return {
     name: taskName,
     args: taskArgs,
@@ -60,7 +61,7 @@ class GeorgeQueue extends MonkeyQueue<GeorgeTask> {
   }
 
   async announceLeaderboardUpdate(
-    newRecords: any[],
+    newRecords: Omit<LeaderboardEntry, "_id">[],
     leaderboardId: string
   ): Promise<void> {
     const taskName = "announceLeaderboardUpdate";
@@ -88,7 +89,7 @@ class GeorgeQueue extends MonkeyQueue<GeorgeTask> {
   async announceDailyLeaderboardTopResults(
     leaderboardId: string,
     leaderboardTimestamp: number,
-    topResults: any[]
+    topResults: LeaderboardEntry[]
   ): Promise<void> {
     const taskName = "announceDailyLeaderboardTopResults";
 

@@ -1,7 +1,8 @@
 import * as UpdateConfig from "../../config";
 import * as SoundController from "../../controllers/sound-controller";
+import { Command, CommandsSubgroup } from "../types";
 
-const subgroup: MonkeyTypes.CommandsSubgroup = {
+const subgroup: CommandsSubgroup = {
   title: "Sound on error...",
   configKey: "playSoundOnError",
   list: [
@@ -17,33 +18,54 @@ const subgroup: MonkeyTypes.CommandsSubgroup = {
       id: "setPlaySoundOnError1",
       display: "damage",
       configValue: "1",
+      hover: (): void => {
+        void SoundController.previewError("1");
+      },
       exec: (): void => {
         UpdateConfig.setPlaySoundOnError("1");
-        SoundController.playError();
+        void SoundController.playError();
       },
     },
     {
       id: "setPlaySoundOnError2",
       display: "triangle",
       configValue: "2",
+      hover: (): void => {
+        void SoundController.previewError("2");
+      },
       exec: (): void => {
         UpdateConfig.setPlaySoundOnError("2");
-        SoundController.playError();
+        void SoundController.playError();
       },
     },
     {
       id: "setPlaySoundOnError3",
       display: "square",
       configValue: "3",
+      hover: (): void => {
+        void SoundController.previewError("3");
+      },
       exec: (): void => {
         UpdateConfig.setPlaySoundOnError("3");
-        SoundController.playError();
+        void SoundController.playError();
+      },
+    },
+    {
+      id: "setPlaySoundOnError3",
+      display: "punch miss",
+      configValue: "4",
+      hover: (): void => {
+        void SoundController.previewError("4");
+      },
+      exec: (): void => {
+        UpdateConfig.setPlaySoundOnError("4");
+        void SoundController.playError();
       },
     },
   ],
 };
 
-const commands: MonkeyTypes.Command[] = [
+const commands: Command[] = [
   {
     id: "changeSoundOnError",
     display: "Sound on error...",
