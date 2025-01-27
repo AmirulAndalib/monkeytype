@@ -1,15 +1,21 @@
+import {
+  ConfigValue,
+  QuoteLength,
+} from "@monkeytype/contracts/schemas/configs";
+import { Mode } from "@monkeytype/contracts/schemas/shared";
 import Config from "../config";
 import * as ConfigEvent from "../observables/config-event";
 import * as ActivePage from "../states/active-page";
+import { applyReducedMotion } from "../utils/misc";
 
 export function show(): void {
   $("#testConfig").removeClass("invisible");
-  $("#mobileTestConfig").removeClass("invisible");
+  $("#mobileTestConfigButton").removeClass("invisible");
 }
 
 export function hide(): void {
   $("#testConfig").addClass("invisible");
-  $("#mobileTestConfig").addClass("invisible");
+  $("#mobileTestConfigButton").addClass("invisible");
 }
 
 export async function instantUpdate(): Promise<void> {
@@ -18,10 +24,7 @@ export async function instantUpdate(): Promise<void> {
     "active"
   );
 
-  $("#testConfig .puncAndNum").css({
-    maxWidth: 0,
-    opacity: 0,
-  });
+  $("#testConfig .puncAndNum").addClass("hidden");
   $("#testConfig .spacer").addClass("scrolled");
   $("#testConfig .time").addClass("hidden");
   $("#testConfig .wordCount").addClass("hidden");
@@ -30,24 +33,16 @@ export async function instantUpdate(): Promise<void> {
   $("#testConfig .zen").addClass("hidden");
 
   if (Config.mode === "time") {
-    $("#testConfig .puncAndNum").css({
-      maxWidth: "",
-      opacity: 1,
-    });
+    $("#testConfig .puncAndNum").removeClass("hidden");
     $("#testConfig .leftSpacer").removeClass("scrolled");
     $("#testConfig .rightSpacer").removeClass("scrolled");
     $("#testConfig .time").removeClass("hidden");
 
     updateExtras("time", Config.time);
   } else if (Config.mode === "words") {
-    $("#testConfig .puncAndNum").css({
-      maxWidth: "",
-      opacity: 1,
-    });
-
+    $("#testConfig .puncAndNum").removeClass("hidden");
     $("#testConfig .leftSpacer").removeClass("scrolled");
     $("#testConfig .rightSpacer").removeClass("scrolled");
-
     $("#testConfig .wordCount").removeClass("hidden");
 
     updateExtras("words", Config.words);
@@ -57,14 +52,9 @@ export async function instantUpdate(): Promise<void> {
 
     updateExtras("quoteLength", Config.quoteLength);
   } else if (Config.mode === "custom") {
-    $("#testConfig .puncAndNum").css({
-      maxWidth: "",
-      opacity: 1,
-    });
-
+    $("#testConfig .puncAndNum").removeClass("hidden");
     $("#testConfig .leftSpacer").removeClass("scrolled");
     $("#testConfig .rightSpacer").removeClass("scrolled");
-
     $("#testConfig .customText").removeClass("hidden");
   }
 
@@ -72,10 +62,7 @@ export async function instantUpdate(): Promise<void> {
   updateExtras("punctuation", Config.punctuation);
 }
 
-export async function update(
-  previous: MonkeyTypes.Mode,
-  current: MonkeyTypes.Mode
-): Promise<void> {
+export async function update(previous: Mode, current: Mode): Promise<void> {
   if (previous === current) return;
   $("#testConfig .mode .textButton").removeClass("active");
   $("#testConfig .mode .textButton[mode='" + current + "']").addClass("active");
@@ -88,17 +75,12 @@ export async function update(
     zen: "zen",
   };
 
-  const animTime = 250;
+  const animTime = applyReducedMotion(250);
   const easing = {
     both: "easeInOutSine",
     in: "easeInSine",
     out: "easeOutSine",
   };
-  // const easing = {
-  //   both: "linear",
-  //   in: "linear",
-  //   out: "linear",
-  // };
 
   const puncAndNumVisible = {
     time: true,
@@ -110,50 +92,43 @@ export async function update(
 
   const puncAndNumEl = $("#testConfig .puncAndNum");
 
-  if (
-    puncAndNumVisible[previous] === false &&
-    puncAndNumVisible[current] === true
-  ) {
-    //show
+  if (puncAndNumVisible[current] !== puncAndNumVisible[previous]) {
+    if (!puncAndNumVisible[current]) {
+      $("#testConfig .leftSpacer").addClass("scrolled");
+    } else {
+      $("#testConfig .leftSpacer").removeClass("scrolled");
+    }
 
-    puncAndNumEl.css("maxWidth", "");
+    puncAndNumEl
+      .css({
+        width: "unset",
+        opacity: 1,
+      })
+      .removeClass("hidden");
 
-    const puncAndNumWidth = Math.round(
-      puncAndNumEl[0]?.getBoundingClientRect().width ?? 224
+    const width = Math.round(
+      puncAndNumEl[0]?.getBoundingClientRect().width ?? 0
     );
 
-    $("#testConfig .leftSpacer").removeClass("scrolled");
     puncAndNumEl
       .css({
-        opacity: 0,
-        maxWidth: 0,
+        width: puncAndNumVisible[previous] ? width : 0,
+        opacity: puncAndNumVisible[previous] ? 1 : 0,
       })
       .animate(
         {
-          opacity: 1,
-          maxWidth: puncAndNumWidth,
+          width: puncAndNumVisible[current] ? width : 0,
+          opacity: puncAndNumVisible[current] ? 1 : 0,
         },
         animTime,
-        easing.both
-      );
-  } else if (
-    puncAndNumVisible[previous] === true &&
-    puncAndNumVisible[current] === false
-  ) {
-    //hide
-    $("#testConfig .leftSpacer").addClass("scrolled");
-    puncAndNumEl
-      .css({
-        opacity: 1,
-        maxWidth: "",
-      })
-      .animate(
-        {
-          opacity: 0,
-          maxWidth: "0",
-        },
-        animTime,
-        easing.both
+        easing.both,
+        () => {
+          if (puncAndNumVisible[current]) {
+            puncAndNumEl.css("width", "unset");
+          } else {
+            puncAndNumEl.addClass("hidden");
+          }
+        }
       );
   }
 
@@ -226,10 +201,7 @@ export async function update(
     );
 }
 
-export function updateExtras(
-  key: string,
-  value: MonkeyTypes.ConfigValues
-): void {
+export function updateExtras(key: string, value: ConfigValue): void {
   if (key === "time") {
     $("#testConfig .time .textButton").removeClass("active");
     const timeCustom = ![15, 30, 60, 120].includes(value as number)
@@ -250,19 +222,19 @@ export function updateExtras(
     ).addClass("active");
   } else if (key === "quoteLength") {
     $("#testConfig .quoteLength .textButton").removeClass("active");
-    (value as MonkeyTypes.QuoteLength[]).forEach((ql) => {
+    (value as QuoteLength[]).forEach((ql) => {
       $(
         "#testConfig .quoteLength .textButton[quoteLength='" + ql + "']"
       ).addClass("active");
     });
   } else if (key === "numbers") {
-    if (!value) {
+    if (value === false) {
       $("#testConfig .numbersMode.textButton").removeClass("active");
     } else {
       $("#testConfig .numbersMode.textButton").addClass("active");
     }
   } else if (key === "punctuation") {
-    if (!value) {
+    if (value === false) {
       $("#testConfig .punctuationMode.textButton").removeClass("active");
     } else {
       $("#testConfig .punctuationMode.textButton").addClass("active");
@@ -281,10 +253,7 @@ export function hideFavoriteQuoteLength(): void {
 ConfigEvent.subscribe((eventKey, eventValue, _nosave, eventPreviousValue) => {
   if (ActivePage.get() !== "test") return;
   if (eventKey === "mode") {
-    update(
-      eventPreviousValue as MonkeyTypes.Mode,
-      eventValue as MonkeyTypes.Mode
-    );
+    void update(eventPreviousValue as Mode, eventValue as Mode);
 
     let m2;
 
@@ -296,12 +265,12 @@ ConfigEvent.subscribe((eventKey, eventValue, _nosave, eventPreviousValue) => {
       m2 = Config.quoteLength;
     }
 
-    updateExtras(Config.mode, m2);
+    if (m2 !== undefined) updateExtras(Config.mode, m2);
   } else if (
     ["time", "quoteLength", "words", "numbers", "punctuation"].includes(
       eventKey
     )
   ) {
-    updateExtras(eventKey, eventValue);
+    if (eventValue !== undefined) updateExtras(eventKey, eventValue);
   }
 });
